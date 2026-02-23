@@ -3,7 +3,7 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "scenario")]
+#[sea_orm(table_name = "series")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
@@ -16,22 +16,22 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::scenario_to_meta::Entity")]
-    ScenarioToMeta,
+    #[sea_orm(has_many = "super::series_to_meta::Entity")]
+    SeriesToMeta,
 }
 
-impl Related<super::scenario_to_meta::Entity> for Entity {
+impl Related<super::series_to_meta::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::ScenarioToMeta.def()
+        Relation::SeriesToMeta.def()
     }
 }
 
 impl Related<super::meta::Entity> for Entity {
     fn to() -> RelationDef {
-        super::scenario_to_meta::Relation::Meta.def()
+        super::series_to_meta::Relation::Meta.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::scenario_to_meta::Relation::Scenario.def().rev())
+        Some(super::series_to_meta::Relation::Series.def().rev())
     }
 }
 

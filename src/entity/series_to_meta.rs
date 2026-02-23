@@ -3,18 +3,12 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "time_table")]
+#[sea_orm(table_name = "series_to_meta")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
-    #[sea_orm(column_type = "Text", unique_key = "group")]
-    pub title: String,
-    #[sea_orm(column_type = "Text", unique_key = "group")]
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub series_id: i32,
+    #[sea_orm(primary_key, auto_increment = false, column_type = "Text")]
     pub meta_id: String,
-    #[sea_orm(unique_key = "group")]
-    pub index: i32,
-    #[sea_orm(column_type = "Text", unique_key = "group")]
-    pub time: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -27,11 +21,25 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Meta,
+    #[sea_orm(
+        belongs_to = "super::series::Entity",
+        from = "Column::SeriesId",
+        to = "super::series::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
+    Series,
 }
 
 impl Related<super::meta::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Meta.def()
+    }
+}
+
+impl Related<super::series::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Series.def()
     }
 }
 

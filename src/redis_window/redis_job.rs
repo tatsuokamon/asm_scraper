@@ -1,14 +1,5 @@
-use std::sync::Arc;
-
-use bb8::Pool;
-use bb8_redis::RedisConnectionManager;
-use redis::AsyncCommands;
-use tokio::{
-    sync::mpsc::{Receiver, Sender},
-    task::JoinSet,
-};
-
 use crate::redis_communication::RedisRequest;
+use bb8_redis::RedisConnectionManager;
 
 pub struct RedisJob {
     id: String,
@@ -24,8 +15,9 @@ impl RedisJob {
         }
     }
 
-    pub fn generate_redis_request<'a, RR: RedisRequest<'a>>(&'a mut self, url: String) -> RR {
-        RR::new(url, &self.id, self.idx)
+    pub fn generate_redis_request<RR: RedisRequest>(&mut self, url: String) -> RR {
+        self.idx += 1;
+        RR::new(url, self.id.clone(), self.idx)
     }
 
     pub fn get_id(&self) -> String {

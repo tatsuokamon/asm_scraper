@@ -1,29 +1,33 @@
+#[derive(serde::Deserialize)]
 pub struct TagSrc {
-    name: String,
-    url: String,
+    pub name: String,
+    pub url: String,
 }
 
+#[derive(serde::Deserialize)]
 pub struct TimeTableSrc {
-    index: i32,
-    title: String,
-    time: String,
+    pub index: i32,
+    pub title: String,
+    pub time: String,
 }
 
+#[derive(serde::Deserialize)]
 pub struct MetaSrc {
-    id: String,
-    title: String,
-    url: String,
-    img_src: Option<String>,
-    time: i64,
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    pub img_src: Option<String>,
+    pub time: i64,
 
-    cv: Vec<TagSrc>,
-    genre: Vec<TagSrc>,
-    illust: Vec<TagSrc>,
-    circle: Vec<TagSrc>,
-    series: Vec<TagSrc>,
-    time_table: Vec<TimeTableSrc>,
+    pub cv: Vec<TagSrc>,
+    pub genre: Vec<TagSrc>,
+    pub illust: Vec<TagSrc>,
+    pub circle: Vec<TagSrc>,
+    pub series: Vec<TagSrc>,
+    pub time_table: Vec<TimeTableSrc>,
 }
 
 pub type UpdateTagResponse = Vec<TagSrc>;
 pub type FindMetaResponse = MetaSrc;
 pub type FindDetailResponse = Vec<String>;
+// pub type IdxResponse = i32;

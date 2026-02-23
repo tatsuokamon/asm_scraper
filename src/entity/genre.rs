@@ -10,7 +10,8 @@ pub struct Model {
     pub works: i32,
     #[sea_orm(column_type = "Text", unique)]
     pub name: String,
-    pub url: Time,
+    #[sea_orm(column_type = "Text")]
+    pub url: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

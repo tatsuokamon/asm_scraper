@@ -13,5 +13,6 @@ pub mod illust_to_meta;
 pub mod meta;
 pub mod scenario;
 pub mod scenario_to_meta;
+pub mod series;
+pub mod series_to_meta;
 pub mod time_table;
-pub mod time_table_to_meta;

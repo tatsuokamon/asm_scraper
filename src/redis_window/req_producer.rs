@@ -13,7 +13,7 @@ pub async fn redis_request_producer(
     set: &mut JoinSet<()>,
     token: CancellationToken,
     pool: Arc<Pool<RedisConnectionManager>>,
-    cfg: PoolAcquireConfig,
+    cfg: Arc<PoolAcquireConfig>,
     channel_buf: usize,
 ) -> Result<Sender<String>, RedisWindowErr> {
     pool.clone().get().await?;
@@ -22,7 +22,7 @@ pub async fn redis_request_producer(
     set.spawn(async move {
         let pool = pool;
         let mut conn;
-        match acquire_conn(&cfg, &pool, Some(&token)).await {
+        match acquire_conn(cfg.clone(), &pool, Some(&token)).await {
             Some(c) => {
                 conn = c;
             }
@@ -36,7 +36,7 @@ pub async fn redis_request_producer(
             tokio::select! {
                 received = req_rx.recv() => {
                     if let Some(req) = received {
-                        match push_with_retry(&req, &token, &mut conn, &pool, &cfg, &req_keyword).await {
+                        match push_with_retry(&req, &token, &mut conn, &pool, cfg.clone(), &req_keyword).await {
                             Ok(_) => {},
                             Err(e) =>  {
                                 tracing::error!("sending req failed: {req}: {e}")
@@ -57,7 +57,7 @@ async fn push_with_retry<'a>(
     token: &CancellationToken,
     conn: &mut PooledConnection<'a, RedisConnectionManager>,
     pool: &'a Arc<Pool<RedisConnectionManager>>,
-    cfg: &'a PoolAcquireConfig,
+    cfg: Arc<PoolAcquireConfig>,
     req_keyword: &String,
 ) -> Result<(), RedisWindowErr> {
     let mut tempt = 0;
@@ -71,7 +71,7 @@ async fn push_with_retry<'a>(
                         },
                         Err(e) => {
                             tracing::error!("{}", e);
-                            match acquire_conn(cfg, pool, Some(token)).await {
+                            match acquire_conn(cfg.clone(), pool, Some(token)).await {
                                 Some(c) => {
                                     *conn = c;
                                 },

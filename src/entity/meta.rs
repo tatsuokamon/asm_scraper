@@ -30,8 +30,10 @@ pub enum Relation {
     IllustToMeta,
     #[sea_orm(has_many = "super::scenario_to_meta::Entity")]
     ScenarioToMeta,
-    #[sea_orm(has_many = "super::time_table_to_meta::Entity")]
-    TimeTableToMeta,
+    #[sea_orm(has_many = "super::series_to_meta::Entity")]
+    SeriesToMeta,
+    #[sea_orm(has_many = "super::time_table::Entity")]
+    TimeTable,
 }
 
 impl Related<super::circle_to_meta::Entity> for Entity {
@@ -64,9 +66,15 @@ impl Related<super::scenario_to_meta::Entity> for Entity {
     }
 }
 
-impl Related<super::time_table_to_meta::Entity> for Entity {
+impl Related<super::series_to_meta::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::TimeTableToMeta.def()
+        Relation::SeriesToMeta.def()
+    }
+}
+
+impl Related<super::time_table::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TimeTable.def()
     }
 }
 
@@ -115,12 +123,12 @@ impl Related<super::scenario::Entity> for Entity {
     }
 }
 
-impl Related<super::time_table::Entity> for Entity {
+impl Related<super::series::Entity> for Entity {
     fn to() -> RelationDef {
-        super::time_table_to_meta::Relation::TimeTable.def()
+        super::series_to_meta::Relation::Series.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::time_table_to_meta::Relation::Meta.def().rev())
+        Some(super::series_to_meta::Relation::Meta.def().rev())
     }
 }
 

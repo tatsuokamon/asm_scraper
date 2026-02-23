@@ -13,11 +13,23 @@ pub enum RedisWindowErr {
     RequestLoopOutErr,
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum RedisHandleErr {
+    #[error("RedisHandleErr Timeout")]
     Timeout,
+
+    #[error("RedisHandleErr ConnectionDrop")]
     ConnectionDrop,
+
+    #[error("RedisHandleErr RedisNoneConnection")]
     RedisNoneConnection,
+
+    #[error("RedisHandleErr RequestSenderErr")]
     RequestSenderErr,
+
+    #[error("RedisHandleErr IDSenderErr")]
     IDSenderErr,
+
+    #[error("RedisHandleErr OverRetry")]
+    OverRetry,
 }

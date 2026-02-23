@@ -20,15 +20,21 @@ where
     async fn acquire<'b>(&self, src: &'b Source) -> Result<Self::Output<'b>, E>;
 }
 
+#[derive(Clone)]
 pub struct MultiplexedAcquireConfig {
+    // how many times try to connect
     pub retry: i32,
     pub connection_config: AsyncConnectionConfig,
+    // for how long time wait after failing to connect
     pub backoff_init: Duration,
     pub backoff_algo: Arc<dyn Fn(Duration) -> Duration + Send + Sync + 'static>,
 }
 
+#[derive(Clone)]
 pub struct PoolAcquireConfig {
+    // how many times try to connect
     pub retry: i32,
+    // for how long time wait after failing to connect
     pub backoff_init: Duration,
     pub backoff_algo: Arc<dyn Fn(Duration) -> Duration + Send + Sync + 'static>,
 }
@@ -80,7 +86,7 @@ impl AcquireConfigTrait<Arc<Pool<RedisConnectionManager>>, bb8::RunError<RedisEr
 }
 
 async fn connection_coroutine<'a, Source, E, Config>(
-    cfg: &'a Config,
+    cfg: Arc<Config>,
     src: &'a Source,
 ) -> Option<Config::Output<'a>>
 where
@@ -109,7 +115,7 @@ where
 }
 
 pub async fn acquire_conn<'a, Source, E: Debug, Config>(
-    cfg: &'a Config,
+    cfg: Arc<Config>,
     src: &'a Source,
     token_op: Option<&CancellationToken>,
 ) -> Option<Config::Output<'a>>

@@ -11,5 +11,6 @@ pub use super::illust_to_meta::Entity as IllustToMeta;
 pub use super::meta::Entity as Meta;
 pub use super::scenario::Entity as Scenario;
 pub use super::scenario_to_meta::Entity as ScenarioToMeta;
+pub use super::series::Entity as Series;
+pub use super::series_to_meta::Entity as SeriesToMeta;
 pub use super::time_table::Entity as TimeTable;
-pub use super::time_table_to_meta::Entity as TimeTableToMeta;
