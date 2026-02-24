@@ -9,17 +9,17 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Genre::Table)
+                    .table(Series::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Genre::Id)
+                        ColumnDef::new(Series::Id)
                             .integer()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Genre::Works).integer().not_null())
-                    .col(ColumnDef::new(Genre::Name).text().not_null().unique_key())
-                    .col(ColumnDef::new(Genre::Url).text().not_null())
+                    .col(ColumnDef::new(Series::Works).integer().not_null())
+                    .col(ColumnDef::new(Series::Name).text().not_null().unique_key())
+                    .col(ColumnDef::new(Series::Url).text().not_null())
                     .to_owned(),
             )
             .await
@@ -27,13 +27,13 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Genre::Table).to_owned())
+            .drop_table(Table::drop().table(Series::Table).to_owned())
             .await
     }
 }
 
 #[derive(Iden)]
-pub enum Genre {
+pub enum Series {
     Table,
     Works,
     Id,

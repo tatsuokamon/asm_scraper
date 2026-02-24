@@ -14,18 +14,23 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(CircleToMeta::CircleId).integer().not_null())
                     .col(ColumnDef::new(CircleToMeta::MetaId).text().not_null())
                     .primary_key(
-                        Index::create().col(CircleToMeta::CircleId).col(CircleToMeta::MetaId)
+                        Index::create()
+                            .col(CircleToMeta::CircleId)
+                            .col(CircleToMeta::MetaId),
                     )
                     .foreign_key(
-                        ForeignKey::create().name("fk-circletometa-circle")
-                        .from(CircleToMeta::Table, CircleToMeta::CircleId)
-                        .to(Circle::Table, Circle::Id)
-                        .on_delete(ForeignKeyAction::Cascade),
+                        ForeignKey::create()
+                            .name("fk-circletometa-circle")
+                            .from(CircleToMeta::Table, CircleToMeta::CircleId)
+                            .to(Circle::Table, Circle::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
-                        ForeignKey::create().name("fk-circletometa-meta")
-                        .from(CircleToMeta::Table, CircleToMeta::MetaId)
-                        .to(Meta::Table, Meta::Id).on_delete(ForeignKeyAction::Cascade),
+                        ForeignKey::create()
+                            .name("fk-circletometa-meta")
+                            .from(CircleToMeta::Table, CircleToMeta::MetaId)
+                            .to(Meta::Table, Meta::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -46,7 +51,7 @@ pub enum Meta {
     Title,
     ImgSrc,
     Url,
-    Time
+    Time,
 }
 
 #[derive(Iden)]
@@ -54,12 +59,12 @@ pub enum Circle {
     Table,
     Id,
     Name,
-    Url
+    Url,
 }
 
 #[derive(Iden)]
 pub enum CircleToMeta {
     Table,
     CircleId,
-    MetaId
+    MetaId,
 }

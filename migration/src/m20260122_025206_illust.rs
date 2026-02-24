@@ -1,4 +1,4 @@
-use sea_orm_migration::{prelude::*};//, schema::*};
+use sea_orm_migration::prelude::*; //, schema::*};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -11,10 +11,15 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Illust::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(Illust::Id).integer().auto_increment().primary_key())
+                    .col(
+                        ColumnDef::new(Illust::Id)
+                            .integer()
+                            .auto_increment()
+                            .primary_key(),
+                    )
                     .col(ColumnDef::new(Illust::Works).integer().not_null())
                     .col(ColumnDef::new(Illust::Name).text().not_null().unique_key())
-                    .col(ColumnDef::new(Illust::Url).time().not_null())
+                    .col(ColumnDef::new(Illust::Url).text().not_null())
                     .to_owned(),
             )
             .await
@@ -33,5 +38,5 @@ pub enum Illust {
     Id,
     Works,
     Name,
-    Url
+    Url,
 }

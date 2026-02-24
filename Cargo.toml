@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = { version = "0.8.8", features = ["macros"] }
 bb8 = "0.9.1"
 bb8-redis = "0.26.0"
+dotenv = "0.15.0"
+futures = "0.3.32"
 redis = "1.0.3"
 reqwest = "0.13.2"
 sea-orm = "1.1.19"
@@ -13,6 +16,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["full"] }
+tokio-stream = "0.1.18"
 tokio-util = "0.7.18"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt"] }

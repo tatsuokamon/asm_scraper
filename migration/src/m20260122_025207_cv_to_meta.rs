@@ -13,19 +13,20 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(ColumnDef::new(CVToMeta::CVId).integer().not_null())
                     .col(ColumnDef::new(CVToMeta::MetaId).text().not_null())
-                    .primary_key(
-                        Index::create().col(CVToMeta::CVId).col(CVToMeta::MetaId)
+                    .primary_key(Index::create().col(CVToMeta::CVId).col(CVToMeta::MetaId))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-cvtometa-cv")
+                            .from(CVToMeta::Table, CVToMeta::CVId)
+                            .to(CV::Table, CV::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
-                        ForeignKey::create().name("fk-cvtometa-cv")
-                        .from(CVToMeta::Table, CVToMeta::CVId)
-                        .to(CV::Table, CV::Id)
-                        .on_delete(ForeignKeyAction::Cascade),
-                    )
-                    .foreign_key(
-                        ForeignKey::create().name("fk-cvtometa-meta")
-                        .from(CVToMeta::Table, CVToMeta::MetaId)
-                        .to(Meta::Table, Meta::Id).on_delete(ForeignKeyAction::Cascade),
+                        ForeignKey::create()
+                            .name("fk-cvtometa-meta")
+                            .from(CVToMeta::Table, CVToMeta::MetaId)
+                            .to(Meta::Table, Meta::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -46,7 +47,7 @@ pub enum Meta {
     Title,
     ImgSrc,
     Url,
-    Time
+    Time,
 }
 
 #[derive(Iden)]
@@ -54,12 +55,12 @@ pub enum CV {
     Table,
     Id,
     Name,
-    Url
+    Url,
 }
 
 #[derive(Iden)]
 pub enum CVToMeta {
     Table,
     CVId,
-    MetaId
+    MetaId,
 }

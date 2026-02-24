@@ -1,4 +1,4 @@
-use sea_orm_migration::{prelude::*};//, schema::*};
+use sea_orm_migration::prelude::*; //, schema::*};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -11,10 +11,15 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(CV::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(CV::Id).integer().auto_increment().primary_key())
+                    .col(
+                        ColumnDef::new(CV::Id)
+                            .integer()
+                            .auto_increment()
+                            .primary_key(),
+                    )
                     .col(ColumnDef::new(CV::Works).integer().not_null())
                     .col(ColumnDef::new(CV::Name).text().not_null().unique_key())
-                    .col(ColumnDef::new(CV::Url).time().not_null())
+                    .col(ColumnDef::new(CV::Url).text().not_null())
                     .to_owned(),
             )
             .await
@@ -33,5 +38,5 @@ pub enum CV {
     Works,
     Id,
     Name,
-    Url
+    Url,
 }

@@ -11,21 +11,30 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(ScenarioToMeta::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(ScenarioToMeta::ScenarioId).integer().not_null())
+                    .col(
+                        ColumnDef::new(ScenarioToMeta::ScenarioId)
+                            .integer()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(ScenarioToMeta::MetaId).text().not_null())
                     .primary_key(
-                        Index::create().col(ScenarioToMeta::ScenarioId).col(ScenarioToMeta::MetaId)
+                        Index::create()
+                            .col(ScenarioToMeta::ScenarioId)
+                            .col(ScenarioToMeta::MetaId),
                     )
                     .foreign_key(
-                        ForeignKey::create().name("fk-scenariotometa-scenario")
-                        .from(ScenarioToMeta::Table, ScenarioToMeta::ScenarioId)
-                        .to(Scenario::Table, Scenario::Id)
-                        .on_delete(ForeignKeyAction::Cascade),
+                        ForeignKey::create()
+                            .name("fk-scenariotometa-scenario")
+                            .from(ScenarioToMeta::Table, ScenarioToMeta::ScenarioId)
+                            .to(Scenario::Table, Scenario::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
-                        ForeignKey::create().name("fk-scenariotometa-meta")
-                        .from(ScenarioToMeta::Table, ScenarioToMeta::MetaId)
-                        .to(Meta::Table, Meta::Id).on_delete(ForeignKeyAction::Cascade),
+                        ForeignKey::create()
+                            .name("fk-scenariotometa-meta")
+                            .from(ScenarioToMeta::Table, ScenarioToMeta::MetaId)
+                            .to(Meta::Table, Meta::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -46,7 +55,7 @@ pub enum Meta {
     Title,
     ImgSrc,
     Url,
-    Time
+    Time,
 }
 
 #[derive(Iden)]
@@ -54,12 +63,12 @@ pub enum Scenario {
     Table,
     Id,
     Name,
-    Url
+    Url,
 }
 
 #[derive(Iden)]
 pub enum ScenarioToMeta {
     Table,
     ScenarioId,
-    MetaId
+    MetaId,
 }

@@ -32,6 +32,7 @@ pub struct StreamConfig {
 pub struct StreamState {
     inflight: atomic::AtomicUsize,
     finished: atomic::AtomicBool,
+    abort: atomic::AtomicBool,
 }
 
 impl StreamState {
@@ -39,6 +40,7 @@ impl StreamState {
         Self {
             inflight: atomic::AtomicUsize::new(0),
             finished: atomic::AtomicBool::new(false),
+            abort: atomic::AtomicBool::new(false)
         }
     }
 
@@ -53,8 +55,15 @@ impl StreamState {
     fn store_finished_state(&self, finished: bool) {
         self.finished.store(finished, atomic::Ordering::Release);
     }
+    fn abort(&self) {
+        self.abort.store(true, atomic::Ordering::Release);
+    }
 
     fn finished(&self) -> bool {
+        if self.abort.load(atomic::Ordering::Acquire) {
+            return true;
+        }
+
         if !self.finished.load(atomic::Ordering::Acquire) {
             return false;
         };
@@ -140,8 +149,10 @@ async fn create_stream_id_getter_part(
     let result_tx_for_sleep = result_tx.clone();
     let result_tx_for_main = result_tx;
 
+    let stream_state_moved_to_sleep = stream_state.clone();
     tokio::select! {
         _ = tokio::time::sleep(Duration::from_secs(how_long_to_wait)) => {
+            stream_state_moved_to_sleep.abort();
             if let Err(e) = result_tx_for_sleep.send(Err(RedisHandleErr::Timeout)).await {
                 tracing::error!("{e}");
             };

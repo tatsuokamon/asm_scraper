@@ -14,18 +14,23 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(IllustToMeta::IllustId).integer().not_null())
                     .col(ColumnDef::new(IllustToMeta::MetaId).text().not_null())
                     .primary_key(
-                        Index::create().col(IllustToMeta::IllustId).col(IllustToMeta::MetaId)
+                        Index::create()
+                            .col(IllustToMeta::IllustId)
+                            .col(IllustToMeta::MetaId),
                     )
                     .foreign_key(
-                        ForeignKey::create().name("fk-illusttometa-illust")
-                        .from(IllustToMeta::Table, IllustToMeta::IllustId)
-                        .to(Illust::Table, Illust::Id)
-                        .on_delete(ForeignKeyAction::Cascade),
+                        ForeignKey::create()
+                            .name("fk-illusttometa-illust")
+                            .from(IllustToMeta::Table, IllustToMeta::IllustId)
+                            .to(Illust::Table, Illust::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
-                        ForeignKey::create().name("fk-illusttometa-meta")
-                        .from(IllustToMeta::Table, IllustToMeta::MetaId)
-                        .to(Meta::Table, Meta::Id).on_delete(ForeignKeyAction::Cascade),
+                        ForeignKey::create()
+                            .name("fk-illusttometa-meta")
+                            .from(IllustToMeta::Table, IllustToMeta::MetaId)
+                            .to(Meta::Table, Meta::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -46,7 +51,7 @@ pub enum Meta {
     Title,
     ImgSrc,
     Url,
-    Time
+    Time,
 }
 
 #[derive(Iden)]
@@ -54,12 +59,12 @@ pub enum Illust {
     Table,
     Id,
     Name,
-    Url
+    Url,
 }
 
 #[derive(Iden)]
 pub enum IllustToMeta {
     Table,
     IllustId,
-    MetaId
+    MetaId,
 }

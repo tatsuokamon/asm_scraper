@@ -9,26 +9,26 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(GenreToMeta::Table)
+                    .table(SeriesToMeta::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(GenreToMeta::GenreId).integer().not_null())
-                    .col(ColumnDef::new(GenreToMeta::MetaId).text().not_null())
+                    .col(ColumnDef::new(SeriesToMeta::SeriesId).integer().not_null())
+                    .col(ColumnDef::new(SeriesToMeta::MetaId).text().not_null())
                     .primary_key(
                         Index::create()
-                            .col(GenreToMeta::GenreId)
-                            .col(GenreToMeta::MetaId),
+                            .col(SeriesToMeta::SeriesId)
+                            .col(SeriesToMeta::MetaId),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-genretometa-genre")
-                            .from(GenreToMeta::Table, GenreToMeta::GenreId)
-                            .to(Genre::Table, Genre::Id)
+                            .name("fk-seriestometa-series")
+                            .from(SeriesToMeta::Table, SeriesToMeta::SeriesId)
+                            .to(Series::Table, Series::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-genretometa-meta")
-                            .from(GenreToMeta::Table, GenreToMeta::MetaId)
+                            .name("fk-seriestometa-meta")
+                            .from(SeriesToMeta::Table, SeriesToMeta::MetaId)
                             .to(Meta::Table, Meta::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
@@ -39,7 +39,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(GenreToMeta::Table).to_owned())
+            .drop_table(Table::drop().table(SeriesToMeta::Table).to_owned())
             .await
     }
 }
@@ -55,7 +55,7 @@ pub enum Meta {
 }
 
 #[derive(Iden)]
-pub enum Genre {
+pub enum Series {
     Table,
     Id,
     Name,
@@ -63,8 +63,8 @@ pub enum Genre {
 }
 
 #[derive(Iden)]
-pub enum GenreToMeta {
+pub enum SeriesToMeta {
     Table,
-    GenreId,
+    SeriesId,
     MetaId,
 }

@@ -1,4 +1,4 @@
-use sea_orm_migration::{prelude::*};//, schema::*};
+use sea_orm_migration::prelude::*; //, schema::*};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -11,10 +11,20 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Scenario::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(Scenario::Id).integer().auto_increment().primary_key())
+                    .col(
+                        ColumnDef::new(Scenario::Id)
+                            .integer()
+                            .auto_increment()
+                            .primary_key(),
+                    )
                     .col(ColumnDef::new(Scenario::Works).integer().not_null())
-                    .col(ColumnDef::new(Scenario::Name).text().not_null().unique_key())
-                    .col(ColumnDef::new(Scenario::Url).time().not_null())
+                    .col(
+                        ColumnDef::new(Scenario::Name)
+                            .text()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(ColumnDef::new(Scenario::Url).text().not_null())
                     .to_owned(),
             )
             .await
@@ -33,5 +43,5 @@ pub enum Scenario {
     Id,
     Works,
     Name,
-    Url
+    Url,
 }
