@@ -24,15 +24,17 @@ mod redis_window;
 macro_rules! get_env {
     ($operand:ident, $keyword:expr) => {
         let $operand = env::var($keyword).expect(&format!("failed to load :{}", $keyword));
+        tracing::info!("config: {}: {}", $keyword, &$operand);
     };
 }
 
 macro_rules! get_env_with_parsing {
-    ($oprand:ident, $keyword:expr, $dest:ty) => {
-        let $oprand = env::var($keyword)
+    ($operand:ident, $keyword:expr, $dest:ty) => {
+        let $operand = env::var($keyword)
             .expect(&format!("failed to load: {}", $keyword))
             .parse::<$dest>()
             .expect(&format!("failed to parse: {}", $keyword));
+        tracing::info!("config: {}: {}", $keyword, &$operand);
     };
 }
 
