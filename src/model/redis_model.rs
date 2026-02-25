@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(serde::Deserialize)]
 pub struct TagSrc {
     pub name: String,

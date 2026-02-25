@@ -69,6 +69,10 @@ fn backoff_algo_temporary(current: Duration) -> Duration {
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
+
     dotenv::dotenv().expect("failed to load .env");
 
     // ready redis

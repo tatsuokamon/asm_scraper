@@ -6,16 +6,15 @@ use crate::{
         err::DBExecutorErr,
     },
     entity::*,
-    model::{MetaSrc, TagSrc, UpdateTagResponse},
+    model::MetaSrc,
 };
 use reqwest::Client;
 use sea_orm::{
-    ExprTrait,
     ActiveModelTrait,
     ActiveValue::Set,
     ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, RelationTrait,
     TransactionTrait,
-    sea_query::{Expr, OnConflict, table},
+    sea_query::{Expr, OnConflict},
 };
 
 macro_rules! impl_into_db_response_tag {
@@ -47,13 +46,13 @@ impl Into<TimeTable> for time_table::Model {
     }
 }
 
-macro_rules! create_simple {
-    ($tags:expr, $tx:expr) => {
-        for tag in $tags {
-            let existring = if let Some(found)
-        }
-    };
-}
+// macro_rules! create_simple {
+//     ($tags:expr, $tx:expr) => {
+//         for tag in $tags {
+//             let existring = if let Some(found)
+//         }
+//     };
+// }
 
 macro_rules! upsert_simple {
     ($meta_id:expr, $srcs:expr, $tx:expr, $sub:ident, $inter:ident, $sub_id:ident, $sub_id_field:ident) => {
@@ -89,7 +88,7 @@ macro_rules! upsert_simple {
                 .on_conflict(OnConflict::columns([
                     $inter::Column::MetaId,
                     $inter::Column::$sub_id_field,
-                ]))
+                ]).do_nothing().to_owned())
                 .exec($tx)
                 .await?;
                 $sub::Entity::update_many()
@@ -330,6 +329,7 @@ pub async fn create_meta(
             .await?;
         };
     }
+    tx.commit().await?;
 
     Ok(())
 }

@@ -11,7 +11,7 @@ dotenv = "0.15.0"
 futures = "0.3.32"
 redis = "1.0.3"
 reqwest = "0.13.2"
-sea-orm = { version = "2.0.0-rc", features = ["runtime-tokio", "sqlx-postgres"] }
+sea-orm = { version = "1.1.9", features = ["runtime-tokio", "sqlx-postgres"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 thiserror = "2.0.18"

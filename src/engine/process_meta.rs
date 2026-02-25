@@ -25,7 +25,6 @@ pub struct ProcessMetaQuery {
     target_url: String,
 }
 
-#[axum::debug_handler]
 pub async fn finding_meta_process(
     State(stt): State<EngineState>,
     Query(q): Query<ProcessMetaQuery>,
@@ -40,8 +39,7 @@ async fn _finding_meta_process<RR>(
 where
     RR: RedisRequest + serde::ser::Serialize,
 {
-    let mut main_set = JoinSet::new();
-    let mut back_set = JoinSet::new();
+    // let mut main_set = JoinSet::new();
 
     let token = CancellationToken::new();
     let token_for_urls = token.child_token();
@@ -50,7 +48,11 @@ where
     let (sse_tx, sse_rx) =
         tokio::sync::mpsc::channel::<Result<i32, EngineErr>>(stt.engine_config.sse_channel_buf);
 
-    main_set.spawn(async move {
+    tracing::info!("call here: 1");
+
+    tokio::spawn(async move {
+        let mut back_set = JoinSet::new();
+        tracing::info!("spawned _real_finding_meta process");
         if let Err(e) = _real_finding_meta_process::<RR>(
             &mut back_set,
             token_for_urls.clone(),
@@ -65,9 +67,12 @@ where
             token_for_urls.cancel();
             while back_set.join_next().await.is_some() {}
         };
+        tracing::info!("spawned _real_finding_meta process: finish")
     });
 
-    main_set.spawn(async move {
+    tracing::info!("call here: 2");
+    tokio::spawn(async move {
+        tracing::info!("spawned count proces");
         let mut count = 0;
         while let Some(result) = count_rx.recv().await {
             match result {
@@ -89,6 +94,7 @@ where
         if let Err(e) = sse_tx.send(Ok(count)).await {
             tracing::error!("{e}");
         }
+        tracing::info!("spawned countfinished");
     });
 
     let main_stream = ReceiverStream::new(sse_rx).map(|result| {
@@ -134,16 +140,17 @@ where
     .await?;
 
     while let Some(received_meta_result) = finding_meta_reciever.recv().await {
-        if let Err(e) = count_tx
-            .send(
-                match parse_received::<FindMetaResponse>(received_meta_result) {
-                    Ok(parsed) => create_meta(parsed, &stt.db, stt.http_client.clone())
-                        .await
-                        .map_err(EngineErr::DBExecutorErr),
+        let sending_content = match parse_received::<FindMetaResponse>(received_meta_result) {
+            Ok(parsed) => { 
+                tracing::info!("{}", &parsed.title);
+                create_meta(parsed, &stt.db, stt.http_client.clone())
+                .await
+                    .map_err(EngineErr::DBExecutorErr) },
 
-                    Err(e) => Err(e),
-                },
-            )
+            Err(e) => Err(e),
+        };
+        if let Err(e) = count_tx
+            .send(sending_content)
             .await
         {
             tracing::error!("{e}");
