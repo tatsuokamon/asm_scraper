@@ -47,7 +47,7 @@ where
 pub async fn finding_urls<RR>(
     set: &mut JoinSet<()>,
     token: CancellationToken,
-    target_url_src: &String,
+    target_url_src: &str,
     idx: i32,
     State(stt): State<EngineState>,
 ) -> Result<Receiver<Result<String, RedisHandleErr>>, EngineErr>
@@ -66,13 +66,13 @@ where
     )
     .await?;
 
-    let cloned_url = target_url_src.clone();
+    let cloned_url = target_url_src.to_string();
     set.spawn(async move {
         let mut tempt = 0;
 
         while tempt < idx {
             let url = if tempt == 0 {
-                format!("{}", &cloned_url)
+                cloned_url.clone()
             } else {
                 format!("{}/page/{}", &cloned_url, tempt + 1)
             };

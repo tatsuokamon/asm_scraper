@@ -18,11 +18,11 @@ pub struct OnetimeConfig {
     pub blocking_time: f64,
     pub how_long_to_wait: u64,
     pub hash_get_retry: usize,
-    pub result_keyword: String
+    pub result_keyword: String,
 }
 
 pub async fn onetime_req<RR>(
-    url: &String,
+    url: &str,
     pool: Arc<Pool<RedisConnectionManager>>,
     pool_config: Arc<PoolAcquireConfig>,
 
@@ -37,7 +37,7 @@ where
 {
     let mut job = RedisJob::new();
     let req_string = {
-        let req: RR = job.generate_redis_request(url.clone());
+        let req: RR = job.generate_redis_request(url.to_string());
         serde_json::to_string(&req).unwrap()
     };
 

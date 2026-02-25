@@ -7,8 +7,11 @@ use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    engine::ready_router,
-    redis_window::{MultiplexedAcquireConfig, OnetimeConfig, PoolAcquireConfig, StreamConfig, redis_request_producer},
+    engine::{EngineConfig, ready_router},
+    redis_window::{
+        MultiplexedAcquireConfig, OnetimeConfig, PoolAcquireConfig, StreamConfig,
+        redis_request_producer,
+    },
 };
 
 mod db_executor;
@@ -34,8 +37,35 @@ macro_rules! get_env_with_parsing {
 }
 
 fn backoff_algo_temporary(current: Duration) -> Duration {
-    current * 2
+    current.mul_f64(1.2_f64)
 }
+
+// need to be defined >>>
+// 1: REDIS_URL: communication target redis url: example(redis://lcalhost:7)
+// 2: BACKOFF_INIT: how long to wait after connection to redis server went bad: secs
+// 3: REDIS_RETRY: how many times to try to reconnect after connection to redis server went bad : secs
+// 4: META_REQUEST_Q_KEYWORD: what keyword do you use when send request of meta to redis server: ()
+// 5: DETAIL_REQUEST_Q_KEYWORD: what keyword do you use when send request of detail to redis server: ()
+// 6: TAG_REQUEST_Q_KEYWORD: what keyword do you use when send request of tag to redis server: ()
+// 7: IDX_REQUEST_Q_KEYWORD: what keyword do you use when send request of idx to redis server: ()
+// 8: RESULT_KEYWORD: what keyword do you use when get response from hash : ()
+// 9: REDIS_POOL_MAX_SIZE: max pool connection: ()
+// 10: REDIS_POOL_CONNECTION_TIMEOUT: pool connection timeout : ()
+// 11: REDIS_REQUEST_CHANNEL_BUFFER : redis request channel buf : ()
+//
+// below env is about upper ray service
+// 12: BLOCKING_TIME: how long to wait per one connection : ()
+// 13: CHANNEL_BUFFER: the buffer of channel used when redis stream: ()
+// 14: HOW_LONG_TO_WAIT: stream max time  : if exceeded, finish
+// 15: HASH_GET_RETRY: how many times to try to get from redis : ()
+//
+// below env is about SSE
+// 16: COUNT_CHANNEL_BUFFER: how many times to try to get from redis : ()
+// 17: SSE_CHANNEL_BUFFER: how many times to try to get from redis : ()
+//
+//
+// 18: DB_URL: db_url : assumed to be postgres://...  
+// 19: EXPOSED_HOST: exposed http host: (example: localhost:80)
 
 #[tokio::main]
 async fn main() {
@@ -76,7 +106,7 @@ async fn main() {
     );
     get_env_with_parsing!(
         redis_request_channel_buf,
-        "REDIS_POOL_CONNECTION_TIMEOUT",
+        "REDIS_REQUEST_CHANNEL_BUFFER",
         usize
     );
     let redis_manager =
@@ -119,7 +149,7 @@ async fn main() {
         .expect("failed to connect database");
 
     get_env_with_parsing!(blocking_time, "BLOCKING_TIME", f64);
-    get_env_with_parsing!(channel_buf, "CHANNEL_BUF", usize);
+    get_env_with_parsing!(channel_buf, "CHANNEL_BUFFER", usize);
     get_env_with_parsing!(how_long_to_wait, "HOW_LONG_TO_WAIT", u64);
     get_env_with_parsing!(hash_get_retry, "HASH_GET_RETRY", usize);
 
@@ -135,7 +165,15 @@ async fn main() {
         blocking_time,
         how_long_to_wait,
         hash_get_retry,
-        result_keyword
+        result_keyword,
+    };
+
+    get_env_with_parsing!(count_channel_buf, "COUNT_CHANNEL_BUFFER", usize);
+    get_env_with_parsing!(sse_channel_buf, "SSE_CHANNEL_BUFFER", usize);
+
+    let engine_conf = EngineConfig {
+        count_channel_buf,
+        sse_channel_buf,
     };
 
     let router = ready_router(
@@ -150,10 +188,15 @@ async fn main() {
         pool_config,
         Arc::new(stream_conf),
         Arc::new(onetime_conf),
+        engine_conf,
     );
 
-    get_env!(addr, "EXPOSED_URL");
-    let listener = tokio::net::TcpListener::bind(addr).await.expect("falied to bind TcpListener");
+    get_env!(addr, "EXPOSED_HOST");
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("falied to bind TcpListener");
 
-    axum::serve(listener, router).await.expect("failed to serve");
+    axum::serve(listener, router)
+        .await
+        .expect("failed to serve");
 }

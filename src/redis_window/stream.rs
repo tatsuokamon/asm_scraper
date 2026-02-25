@@ -26,7 +26,7 @@ pub struct StreamConfig {
     pub blocking_time: f64,
     pub how_long_to_wait: u64, // redis_request_timeout
     pub hash_get_retry: usize,
-    pub result_keyword: String
+    pub result_keyword: String,
 }
 
 pub struct StreamState {
@@ -40,7 +40,7 @@ impl StreamState {
         Self {
             inflight: atomic::AtomicUsize::new(0),
             finished: atomic::AtomicBool::new(false),
-            abort: atomic::AtomicBool::new(false)
+            abort: atomic::AtomicBool::new(false),
         }
     }
 
@@ -106,6 +106,12 @@ async fn create_stream_result_part(
             {
                 Ok(hash_got) => {
                     if let Err(e) = result_tx.send(Ok(hash_got)).await {
+                        tracing::error!("{e}");
+                    }
+                    if let Err(e) = conn
+                        .hdel::<&String, &String, i32>(result_keyword, &received_id)
+                        .await
+                    {
                         tracing::error!("{e}");
                     }
                 }

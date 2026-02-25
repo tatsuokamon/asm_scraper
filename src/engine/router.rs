@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use crate::{
     engine::{
+        EngineConfig,
         process_meta::finding_meta_process,
         state::{EngineState, EngineStateStruct},
     },
-    redis_communication::BasicRedisReq,
     redis_window::{MultiplexedAcquireConfig, OnetimeConfig, PoolAcquireConfig, StreamConfig},
 };
 use axum::{Router, routing::get};
@@ -23,22 +23,27 @@ pub fn ready_router(
     meta_tx: Sender<String>,
 
     multiplexed_acquire_config: Arc<MultiplexedAcquireConfig>,
-    pool_acquire_confing: Arc<PoolAcquireConfig>,
+    pool_acquire_config: Arc<PoolAcquireConfig>,
     stream_conf: Arc<StreamConfig>,
     onetime_conf: Arc<OnetimeConfig>,
+    engine_conf: EngineConfig,
 ) -> Router {
     let state: EngineState = Arc::new(EngineStateStruct {
         pool: pool,
         red_client: Arc::new(red_client),
         http_client: Arc::new(http_client),
         db,
+
         idx_tx,
         meta_tx,
         url_tx,
-        multiplexed_acquire_config: multiplexed_acquire_config,
-        pool_acquire_config: pool_acquire_confing,
+
+        multiplexed_acquire_config,
+        pool_acquire_config,
+
         stream_config: stream_conf,
         onetime_config: onetime_conf,
+        engine_config: engine_conf,
     });
 
     Router::new()

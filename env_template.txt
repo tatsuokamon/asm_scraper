@@ -1,0 +1,61 @@
+# 1: communication target redis url: example(redis://lcalhost:7)
+REDIS_URL=
+
+# 2: how long to wait after connection to redis server went bad: secs
+BACKOFF_INIT=
+
+# 3: how many times to try to reconnect after connection to redis server went bad : secs
+REDIS_RETRY=
+
+
+# shared
+# 4: what keyword do you use when send request of meta to redis server: ()
+META_REQUEST_Q_KEYWORD=
+
+# 5: what keyword do you use when send request of detail to redis server: ()
+DETAIL_REQUEST_Q_KEYWORD=
+
+# 6: what keyword do you use when send request of tag to redis server: ()
+TAG_REQUEST_Q_KEYWORD=
+
+# 6: what keyword do you use when send request of idx to redis server: ()
+IDX_REQUEST_Q_KEYWORD=
+
+# 8: what keyword do you use when get response from hash : ()
+RESULT_KEYWORD=
+
+
+
+# 9: max pool connection: ()
+REDIS_POOL_MAX_SIZE=
+
+# 10: pool connection timeout : ()
+REDIS_POOL_CONNECTION_TIMEOUT=
+
+# 11: redis request channel buf : ()
+REDIS_REQUEST_CHANNEL_BUFFER=
+
+# 12: how long to wait per one connection : ()
+BLOCKING_TIME=
+
+# 13: the buffer of channel used when redis stream: ()
+CHANNEL_BUFFER=
+
+# 14: stream max time  : if exceeded, finish
+HOW_LONG_TO_WAIT=
+
+# 15: how many times to try to get from redis : ()
+HASH_GET_RETRY=
+
+
+# 16:: how many times to try to get from redis : ()
+COUNT_CHANNEL_BUFFER=
+
+# 17: how many times to try to get from redis : ()
+SSE_CHANNEL_BUFFER=
+
+# 18: db_url : assumed to be postgres://...
+DB_URL=
+
+# 19: exposed http host: (example: localhost:80)
+EXPOSED_HOST=

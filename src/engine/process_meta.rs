@@ -29,14 +29,14 @@ pub struct ProcessMetaQuery {
 pub async fn finding_meta_process(
     State(stt): State<EngineState>,
     Query(q): Query<ProcessMetaQuery>,
-) ->Sse<impl Stream<Item = Result<Event, Infallible>> + Send + 'static> {
+) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send + 'static> {
     _finding_meta_process::<BasicRedisReq>(State(stt), Query(q)).await
 }
 
 async fn _finding_meta_process<RR>(
     State(stt): State<EngineState>,
     Query(q): Query<ProcessMetaQuery>,
-) ->  Sse<impl Stream<Item = Result<Event, Infallible>> + Send + 'static>
+) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send + 'static>
 where
     RR: RedisRequest + serde::ser::Serialize,
 {
@@ -46,8 +46,9 @@ where
     let token = CancellationToken::new();
     let token_for_urls = token.child_token();
     let token_for_meta = token.child_token();
-    let (count_tx, mut count_rx) = tokio::sync::mpsc::channel(4); // TODO: temporary value
-    let (sse_tx, sse_rx) = tokio::sync::mpsc::channel::<Result<i32, EngineErr>>(4); // TODO: temporary value
+    let (count_tx, mut count_rx) = tokio::sync::mpsc::channel(stt.engine_config.count_channel_buf);
+    let (sse_tx, sse_rx) =
+        tokio::sync::mpsc::channel::<Result<i32, EngineErr>>(stt.engine_config.sse_channel_buf);
 
     main_set.spawn(async move {
         if let Err(e) = _real_finding_meta_process::<RR>(
@@ -62,7 +63,7 @@ where
         {
             tracing::error!("{e}");
             token_for_urls.cancel();
-            while let Some(_) = back_set.join_next().await {}
+            while back_set.join_next().await.is_some() {}
         };
     });
 
@@ -102,11 +103,9 @@ where
         })
     });
 
-    Sse::new(
-        main_stream.chain(stream::once(async {
-            Ok(Event::default().event("end").data("complete"))
-        }))
-    )
+    Sse::new(main_stream.chain(stream::once(async {
+        Ok(Event::default().event("end").data("complete"))
+    })))
 }
 
 async fn _real_finding_meta_process<RR>(
@@ -140,7 +139,7 @@ where
                 match parse_received::<FindMetaResponse>(received_meta_result) {
                     Ok(parsed) => create_meta(parsed, &stt.db, stt.http_client.clone())
                         .await
-                        .map_err(|e| EngineErr::DBExecutorErr(e)),
+                        .map_err(EngineErr::DBExecutorErr),
 
                     Err(e) => Err(e),
                 },

@@ -10,6 +10,7 @@ use crate::{
 };
 use reqwest::Client;
 use sea_orm::{
+    ExprTrait,
     ActiveModelTrait,
     ActiveValue::Set,
     ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, RelationTrait,
