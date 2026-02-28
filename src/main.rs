@@ -66,7 +66,7 @@ fn backoff_algo_temporary(current: Duration) -> Duration {
 // 17: SSE_CHANNEL_BUFFER: how many times to try to get from redis : ()
 //
 //
-// 18: DB_URL: db_url : assumed to be postgres://...  
+// 18: DB_URL: db_url : assumed to be postgres://...
 // 19: EXPOSED_HOST: exposed http host: (example: localhost:80)
 
 #[tokio::main]

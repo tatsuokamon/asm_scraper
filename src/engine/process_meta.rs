@@ -48,8 +48,6 @@ where
     let (sse_tx, sse_rx) =
         tokio::sync::mpsc::channel::<Result<i32, EngineErr>>(stt.engine_config.sse_channel_buf);
 
-    tracing::info!("call here: 1");
-
     tokio::spawn(async move {
         let mut back_set = JoinSet::new();
         tracing::info!("spawned _real_finding_meta process");
@@ -70,9 +68,8 @@ where
         tracing::info!("spawned _real_finding_meta process: finish")
     });
 
-    tracing::info!("call here: 2");
     tokio::spawn(async move {
-        tracing::info!("spawned count proces");
+        tracing::info!("spawned count process");
         let mut count = 0;
         while let Some(result) = count_rx.recv().await {
             match result {
@@ -135,24 +132,23 @@ where
         set,
         token_for_meta,
         finding_urls_receiver,
+        Some(false),
         State(stt.clone()),
     )
     .await?;
 
     while let Some(received_meta_result) = finding_meta_reciever.recv().await {
         let sending_content = match parse_received::<FindMetaResponse>(received_meta_result) {
-            Ok(parsed) => { 
+            Ok(parsed) => {
                 tracing::info!("{}", &parsed.title);
                 create_meta(parsed, &stt.db, stt.http_client.clone())
-                .await
-                    .map_err(EngineErr::DBExecutorErr) },
+                    .await
+                    .map_err(EngineErr::DBExecutorErr)
+            }
 
             Err(e) => Err(e),
         };
-        if let Err(e) = count_tx
-            .send(sending_content)
-            .await
-        {
+        if let Err(e) = count_tx.send(sending_content).await {
             tracing::error!("{e}");
         }
     }

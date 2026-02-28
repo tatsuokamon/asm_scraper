@@ -85,10 +85,11 @@ macro_rules! upsert_simple {
                     $sub_id: Set(existing.id),
                     meta_id: Set($meta_id.clone()),
                 })
-                .on_conflict(OnConflict::columns([
-                    $inter::Column::MetaId,
-                    $inter::Column::$sub_id_field,
-                ]).do_nothing().to_owned())
+                .on_conflict(
+                    OnConflict::columns([$inter::Column::MetaId, $inter::Column::$sub_id_field])
+                        .do_nothing()
+                        .to_owned(),
+                )
                 .exec($tx)
                 .await?;
                 $sub::Entity::update_many()

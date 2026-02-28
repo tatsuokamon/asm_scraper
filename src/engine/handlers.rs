@@ -6,7 +6,7 @@ use crate::{
     engine::{err::EngineErr, library::parse_received, state::EngineState},
     model::FindDetailResponse,
     redis_communication::{RedisRequest, RedisResponse},
-    redis_window::{RedisHandleErr, create_stream, onetime_req},
+    redis_window::{RedisHandleErr, RequestContract, create_stream, onetime_req},
 };
 
 pub async fn finding_idx<RR>(
@@ -61,8 +61,11 @@ where
         stt.red_client.clone(),
         stt.multiplexed_acquire_config.clone(),
         stt.pool_acquire_config.clone(),
-        stt.url_tx.clone(),
         stt.stream_config.clone(),
+        RequestContract {
+            req_tx: stt.url_tx.clone(),
+            force: Some(true)
+        }
     )
     .await?;
 
@@ -91,7 +94,9 @@ where
 pub async fn finding_meta<RR>(
     set: &mut JoinSet<()>,
     token: CancellationToken,
+
     mut url_response_rx: Receiver<Result<String, RedisHandleErr>>,
+    force: Option<bool>,
     State(stt): State<EngineState>,
 ) -> Result<Receiver<Result<String, RedisHandleErr>>, EngineErr>
 where
@@ -104,8 +109,8 @@ where
         stt.red_client.clone(),
         stt.multiplexed_acquire_config.clone(),
         stt.pool_acquire_config.clone(),
-        stt.meta_tx.clone(),
         stt.stream_config.clone(),
+        RequestContract { req_tx: stt.meta_tx.clone(), force }
     )
     .await?;
 

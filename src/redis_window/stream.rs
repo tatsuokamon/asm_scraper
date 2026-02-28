@@ -1,9 +1,7 @@
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
-use redis::AsyncCommands;
 use std::{
     sync::{Arc, atomic},
-    time::Duration,
 };
 use tokio::{
     sync::mpsc::{Receiver, Sender},
@@ -14,9 +12,12 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     redis_communication::RedisRequest,
     redis_window::{
-        acquire::{MultiplexedAcquireConfig, PoolAcquireConfig, acquire_conn},
+        acquire::{MultiplexedAcquireConfig, PoolAcquireConfig},
         err::{RedisHandleErr, RedisWindowErr},
         redis_job::RedisJob,
+        stream_req_part::{RequestContract, create_stream_request_part},
+        stream_result_part::create_stream_result_part,
+        stream_id_getter_part::create_stream_id_getter_part
     },
 };
 
@@ -44,22 +45,22 @@ impl StreamState {
         }
     }
 
-    fn inflight_sub(&self, value: usize) {
+    pub fn inflight_sub(&self, value: usize) {
         self.inflight.fetch_sub(value, atomic::Ordering::Release);
     }
 
-    fn inflight_add(&self, value: usize) {
+    pub fn inflight_add(&self, value: usize) {
         self.inflight.fetch_add(value, atomic::Ordering::Release);
     }
 
-    fn store_finished_state(&self, finished: bool) {
+    pub fn store_finished_state(&self, finished: bool) {
         self.finished.store(finished, atomic::Ordering::Release);
     }
-    fn abort(&self) {
+    pub fn abort(&self) {
         self.abort.store(true, atomic::Ordering::Release);
     }
 
-    fn finished(&self) -> bool {
+    pub fn finished(&self) -> bool {
         if self.abort.load(atomic::Ordering::Acquire) {
             return true;
         }
@@ -72,180 +73,6 @@ impl StreamState {
     }
 }
 
-async fn create_stream_result_part(
-    result_tx: Sender<Result<String, RedisHandleErr>>,
-    result_keyword: &String,
-    mut id_rx: Receiver<String>,
-
-    pool: Arc<Pool<RedisConnectionManager>>,
-    pool_acquire_config: Arc<PoolAcquireConfig>,
-    hget_retry: usize,
-) -> () {
-    let mut conn;
-    match acquire_conn(pool_acquire_config.clone(), &pool, None).await {
-        Some(c) => {
-            conn = c;
-        }
-        None => {
-            if let Err(e) = result_tx
-                .send(Err(RedisHandleErr::RedisNoneConnection))
-                .await
-            {
-                tracing::error!("{e}");
-            };
-            return;
-        }
-    };
-
-    while let Some(received_id) = id_rx.recv().await {
-        let mut tempt = 0;
-        while tempt < hget_retry {
-            match conn
-                .hget::<&String, &String, String>(result_keyword, &received_id)
-                .await
-            {
-                Ok(hash_got) => {
-                    if let Err(e) = result_tx.send(Ok(hash_got)).await {
-                        tracing::error!("{e}");
-                    }
-                    if let Err(e) = conn
-                        .hdel::<&String, &String, i32>(result_keyword, &received_id)
-                        .await
-                    {
-                        tracing::error!("{e}");
-                    }
-                }
-                Err(e) => {
-                    tracing::error!("{e}");
-
-                    match acquire_conn(pool_acquire_config.clone(), &pool, None).await {
-                        Some(c) => {
-                            conn = c;
-                        }
-                        None => {
-                            if let Err(e) = result_tx
-                                .send(Err(RedisHandleErr::RedisNoneConnection))
-                                .await
-                            {
-                                tracing::error!("{e}");
-                            };
-                            return;
-                        }
-                    };
-                    tempt += 1;
-                }
-            }
-        }
-    }
-}
-
-async fn create_stream_id_getter_part(
-    result_tx: Sender<Result<String, RedisHandleErr>>,
-    redis_job_id: String,
-    id_tx: Sender<String>,
-
-    client: Arc<redis::Client>,
-    client_acquire_config: Arc<MultiplexedAcquireConfig>,
-
-    stream_state: Arc<StreamState>,
-
-    blocking_time: f64,
-    how_long_to_wait: u64,
-) -> () {
-    let result_tx_for_sleep = result_tx.clone();
-    let result_tx_for_main = result_tx;
-
-    let stream_state_moved_to_sleep = stream_state.clone();
-    tokio::select! {
-        _ = tokio::time::sleep(Duration::from_secs(how_long_to_wait)) => {
-            stream_state_moved_to_sleep.abort();
-            if let Err(e) = result_tx_for_sleep.send(Err(RedisHandleErr::Timeout)).await {
-                tracing::error!("{e}");
-            };
-        },
-        _ = async move {
-            let mut conn;
-
-            match acquire_conn(client_acquire_config.clone(), &client, None).await {
-                Some(got_conn) => {
-                    conn = got_conn;
-                },
-                None => {
-                    if let Err(e) = result_tx_for_main.send(Err(RedisHandleErr::RedisNoneConnection)).await {
-                        tracing::error!("{e}");
-                    };
-                    return;
-                }
-            };
-
-            loop {
-                if stream_state.finished() {
-                    break;
-                }
-
-                match conn.brpop::<&String, (String, String)>(&redis_job_id, blocking_time).await {
-                    Ok(received) => {
-                        stream_state.inflight_sub(1); // idが戻ってきた時点でstate側の終了条件とする (完全にresultを返す時点ではないことに注意)
-                        let (_, task_id) = received;
-                        if let Err(e) = id_tx.send(task_id).await {
-                            tracing::error!("{e}");
-                            if let Err(e) = result_tx_for_main.send(Err(RedisHandleErr::IDSenderErr)).await {
-                                tracing::error!("{e}");
-                                continue;
-                            }
-                        }
-
-                    },
-                    Err(e) => {
-                        tracing::error!("{e}");
-                        match acquire_conn(client_acquire_config.clone(), &client, None).await {
-                            Some(c) => {
-                                conn = c;
-                            },
-                            None => {
-                                if let Err(e) = result_tx_for_main.send(Err(RedisHandleErr::RedisNoneConnection)).await {
-                                    tracing::error!("{e}");
-                                }
-                            }
-                        }
-                    }
-                }
-            } // loop out
-        } => {}
-    }
-}
-
-async fn create_stream_request_part<RR>(
-    mut url_rx: Receiver<String>,
-    req_tx: Sender<String>,
-    result_tx: Sender<Result<String, RedisHandleErr>>,
-    mut redis_job: RedisJob,
-    stream_state: Arc<StreamState>,
-) -> ()
-where
-    RR: RedisRequest + serde::ser::Serialize,
-{
-    while let Some(url) = url_rx.recv().await {
-        let req_string = {
-            let redis_req: RR = redis_job.generate_redis_request(url.clone());
-            serde_json::to_string(&redis_req).unwrap()
-        };
-
-        if let Err(e) = req_tx.send(req_string).await {
-            tracing::error!("{e}");
-            if let Err(e) = result_tx.send(Err(RedisHandleErr::RequestSenderErr)).await {
-                tracing::error!("{e}");
-            };
-            continue;
-        }
-
-        stream_state.inflight_add(1);
-    } // loop out
-    //
-
-    stream_state.store_finished_state(true);
-}
-
 pub async fn create_stream<RR>(
     // control thread;
     set: &mut JoinSet<()>,
@@ -256,8 +83,9 @@ pub async fn create_stream<RR>(
     // client connection config
     multiplexed_acquire_config: Arc<MultiplexedAcquireConfig>,
     pool_acquire_config: Arc<PoolAcquireConfig>,
-    req_tx: Sender<String>, // redis_request sender
     stream_config: Arc<StreamConfig>,
+
+    req_contract: RequestContract
 ) -> Result<(Sender<String>, Receiver<Result<String, RedisHandleErr>>), RedisWindowErr>
 where
     RR: RedisRequest + serde::ser::Serialize,
@@ -283,10 +111,10 @@ where
             _ = token_moved_to_req_thread.cancelled() => {},
             _ = create_stream_request_part::<RR>(
                 url_rx,
-                req_tx,
                 result_tx_moved_to_req_thread,
                 redis_job,
-                stream_state_moved_to_req_thread
+                stream_state_moved_to_req_thread,
+                req_contract
             ) => {}
         }
     });

@@ -15,9 +15,13 @@ impl RedisJob {
         }
     }
 
-    pub fn generate_redis_request<RR: RedisRequest>(&mut self, url: String) -> RR {
+    pub fn generate_redis_request<RR: RedisRequest>(
+        &mut self,
+        url: String,
+        force: Option<bool>,
+    ) -> RR {
         self.idx += 1;
-        RR::new(url, self.id.clone(), self.idx)
+        RR::new(url, self.id.clone(), self.idx, force)
     }
 
     pub fn get_id(&self) -> String {

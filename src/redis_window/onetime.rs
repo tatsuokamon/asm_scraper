@@ -37,7 +37,7 @@ where
 {
     let mut job = RedisJob::new();
     let req_string = {
-        let req: RR = job.generate_redis_request(url.to_string());
+        let req: RR = job.generate_redis_request(url.to_string(), Some(true));
         serde_json::to_string(&req).unwrap()
     };
 

@@ -5,7 +5,8 @@ pub trait RedisRequest {
     fn get_id(&self) -> String;
     fn get_job_id(&self) -> String;
     fn index(&self) -> i32;
-    fn new(url: String, job_id: String, index: i32) -> Self;
+    fn is_forced(&self) -> bool;
+    fn new(url: String, job_id: String, index: i32, force: Option<bool>) -> Self;
 }
 
 #[derive(Serialize)]
@@ -14,6 +15,7 @@ pub struct BasicRedisReq {
     id: String,
     pub job_id: String,
     pub index: i32,
+    pub force: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -38,13 +40,18 @@ impl RedisRequest for BasicRedisReq {
         self.index
     }
 
-    fn new(url: String, job_id: String, index: i32) -> Self {
+    fn new(url: String, job_id: String, index: i32, force: Option<bool>) -> Self {
         let id = uuid::Uuid::new_v4().to_string();
         Self {
             url,
             job_id,
             index,
             id,
+            force,
         }
+    }
+
+    fn is_forced(&self) -> bool {
+        self.force.unwrap_or(false)
     }
 }
