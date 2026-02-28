@@ -5,7 +5,8 @@ on:
     branches: ["master"]
   pull_request:
 
-  env: IMAGE_NAME: tatsuokamon/asm_serv
+  env: 
+    IMAGE_NAME: tatsuokamon/asm_serv
 
   jobs:
     docker:
