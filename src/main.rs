@@ -146,7 +146,7 @@ async fn main() {
 
     invoke_tx!(meta_tx, meta_req_q_keyword);
     invoke_tx!(detail_tx, detail_req_q_keyword);
-    invoke_tx!(_tag_tx, tag_req_q_keyword);
+    invoke_tx!(tag_tx, tag_req_q_keyword);
     invoke_tx!(idx_tx, idx_req_q_keyword);
 
     get_env!(db_url, "DB_URL");
@@ -190,6 +190,7 @@ async fn main() {
         idx_tx,
         detail_tx,
         meta_tx,
+        tag_tx,
         multiplexed_config,
         pool_config,
         Arc::new(stream_conf),

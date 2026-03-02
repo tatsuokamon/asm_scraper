@@ -15,9 +15,11 @@ pub struct EngineStateStruct {
 
     pub http_client: Arc<reqwest::Client>,
     pub db: sea_orm::DatabaseConnection,
+
     pub idx_tx: Sender<String>,
     pub meta_tx: Sender<String>,
     pub url_tx: Sender<String>,
+    pub update_tx: Sender<String>,
 
     pub multiplexed_acquire_config: Arc<MultiplexedAcquireConfig>,
     pub pool_acquire_config: Arc<PoolAcquireConfig>,

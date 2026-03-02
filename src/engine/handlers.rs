@@ -4,14 +4,14 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     engine::{err::EngineErr, library::parse_received, state::EngineState},
-    model::FindDetailResponse,
+    model::{FindDetailResponse, TagSrc, UpdateTagResponse},
     redis_communication::{RedisRequest, RedisResponse},
     redis_window::{RedisHandleErr, RequestContract, create_stream, onetime_req},
 };
 
 pub async fn finding_idx<RR>(
     State(stt): State<EngineState>,
-    target_url_src: &String,
+    target_url_src: &str,
 ) -> Result<i32, EngineErr>
 where
     RR: RedisRequest + serde::ser::Serialize,
@@ -64,8 +64,8 @@ where
         stt.stream_config.clone(),
         RequestContract {
             req_tx: stt.url_tx.clone(),
-            force: Some(true)
-        }
+            force: Some(true),
+        },
     )
     .await?;
 
@@ -91,6 +91,63 @@ where
     Ok(result_rx)
 }
 
+pub enum UpdateSrc {
+    CV,
+    Circle,
+    Scenario,
+    Illust,
+    Series,
+    Genre,
+    // Music, TODO: need to add Music
+}
+impl ToString for UpdateSrc {
+    fn to_string(&self) -> String {
+        match self {
+            Self::CV => "".to_string(),
+            Self::Circle => "".to_string(),
+            Self::Scenario => "".to_string(),
+            Self::Illust => "".to_string(),
+            Self::Series => "".to_string(),
+            Self::Genre => "".to_string(),
+        }
+    }
+}
+
+pub async fn update_tag<RR>(
+    update_src: UpdateSrc,
+    State(stt): State<EngineState>,
+) -> Result<Vec<TagSrc>, EngineErr>
+where
+    RR: RedisRequest + serde::Serialize,
+{
+    let target_url = update_src.to_string();
+    let update_result = onetime_req::<RR>(
+        &target_url,
+        stt.pool.clone(),
+        stt.pool_acquire_config.clone(),
+        stt.red_client.clone(),
+        stt.multiplexed_acquire_config.clone(),
+        stt.update_tx.clone(),
+        stt.onetime_config.clone(),
+    )
+    .await?;
+
+    match serde_json::from_str::<RedisResponse>(&update_result) {
+        Ok(deserialized) => match deserialized.error {
+            Some(er) => Err(EngineErr::RedisCommunicationErr(er)),
+            None => match deserialized.payload {
+                Some(payload) => Ok(serde_json::from_str(&payload)
+                    .map_err(|_| EngineErr::InvalidReponseErr(update_result.clone()))?),
+                None => Err(EngineErr::ResponseNoneErr),
+            },
+        },
+        Err(e) => {
+            tracing::error!("{e}");
+            Err(EngineErr::InvalidReponseErr(update_result.clone()))
+        }
+    }
+}
+
 pub async fn finding_meta<RR>(
     set: &mut JoinSet<()>,
     token: CancellationToken,
@@ -110,7 +167,10 @@ where
         stt.multiplexed_acquire_config.clone(),
         stt.pool_acquire_config.clone(),
         stt.stream_config.clone(),
-        RequestContract { req_tx: stt.meta_tx.clone(), force }
+        RequestContract {
+            req_tx: stt.meta_tx.clone(),
+            force,
+        },
     )
     .await?;
 

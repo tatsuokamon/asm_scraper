@@ -1,8 +1,6 @@
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
-use std::{
-    sync::{Arc, atomic},
-};
+use std::sync::{Arc, atomic};
 use tokio::{
     sync::mpsc::{Receiver, Sender},
     task::JoinSet,
@@ -15,9 +13,9 @@ use crate::{
         acquire::{MultiplexedAcquireConfig, PoolAcquireConfig},
         err::{RedisHandleErr, RedisWindowErr},
         redis_job::RedisJob,
+        stream_id_getter_part::create_stream_id_getter_part,
         stream_req_part::{RequestContract, create_stream_request_part},
         stream_result_part::create_stream_result_part,
-        stream_id_getter_part::create_stream_id_getter_part
     },
 };
 
@@ -85,7 +83,7 @@ pub async fn create_stream<RR>(
     pool_acquire_config: Arc<PoolAcquireConfig>,
     stream_config: Arc<StreamConfig>,
 
-    req_contract: RequestContract
+    req_contract: RequestContract,
 ) -> Result<(Sender<String>, Receiver<Result<String, RedisHandleErr>>), RedisWindowErr>
 where
     RR: RedisRequest + serde::ser::Serialize,

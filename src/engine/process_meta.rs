@@ -9,7 +9,7 @@ use crate::{
         state::EngineState,
     },
     model::FindMetaResponse,
-    redis_communication::{BasicRedisReq, RedisRequest},
+    redis_communication::RedisRequest,
 };
 use axum::{
     extract::{Query, State},
@@ -20,19 +20,57 @@ use tokio::{sync::mpsc::Sender, task::JoinSet};
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::sync::CancellationToken;
 
+pub enum ScrapeMetaSrc<'a> {
+    CV(&'a str),
+    Circle(&'a str),
+    Scenario(&'a str),
+    Illust(&'a str),
+    Series(&'a str),
+    Genre(&'a str),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ScrapeConvertErr {
+    #[error("Not found")]
+    NotFound,
+}
+
+impl<'a> ScrapeMetaSrc<'a> {
+    fn from_str_to_src<'b>(
+        s: &'b str,
+        content: &'b str,
+    ) -> Result<ScrapeMetaSrc<'b>, ScrapeConvertErr> {
+        match s {
+            "cv" => Ok(ScrapeMetaSrc::CV(content)),
+            "circle" => Ok(ScrapeMetaSrc::Circle(content)),
+            "scenario" => Ok(ScrapeMetaSrc::Scenario(content)),
+            "illust" => Ok(ScrapeMetaSrc::Illust(content)),
+            "series" => Ok(ScrapeMetaSrc::Series(content)),
+            "genre" => Ok(ScrapeMetaSrc::Genre(content)),
+            _ => Err(ScrapeConvertErr::NotFound),
+        }
+    }
+
+    fn to_url(&self) -> String {
+        let url_template = "https://asmr18.fans/";
+        match self {
+            Self::CV(content) => format!("{}cv/{}/", url_template, content),
+            Self::Circle(content) => format!("{}circle/{}/", url_template, content),
+            Self::Scenario(content) => format!("{}scenario/{}/", url_template, content),
+            Self::Illust(content) => format!("{}illust/{}/", url_template, content),
+            Self::Series(content) => format!("{}series/{}/", url_template, content),
+            Self::Genre(content) => format!("{}genre/{}/", url_template, content),
+        }
+    }
+}
+
 #[derive(serde::Deserialize)]
 pub struct ProcessMetaQuery {
-    target_url: String,
+    pub kind: String,
+    pub value: String,
 }
 
-pub async fn finding_meta_process(
-    State(stt): State<EngineState>,
-    Query(q): Query<ProcessMetaQuery>,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send + 'static> {
-    _finding_meta_process::<BasicRedisReq>(State(stt), Query(q)).await
-}
-
-async fn _finding_meta_process<RR>(
+pub async fn scraping_meta_process<RR>(
     State(stt): State<EngineState>,
     Query(q): Query<ProcessMetaQuery>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send + 'static>
@@ -51,12 +89,12 @@ where
     tokio::spawn(async move {
         let mut back_set = JoinSet::new();
         tracing::info!("spawned _real_finding_meta process");
-        if let Err(e) = _real_finding_meta_process::<RR>(
+        if let Err(e) = _real_scraping_meta_process::<RR>(
             &mut back_set,
             token_for_urls.clone(),
             token_for_meta,
             count_tx,
-            q.target_url,
+            q,
             State(stt.clone()),
         )
         .await
@@ -111,20 +149,20 @@ where
     })))
 }
 
-async fn _real_finding_meta_process<RR>(
+async fn _real_scraping_meta_process<RR>(
     set: &mut JoinSet<()>,
     token_for_urls: CancellationToken,
     token_for_meta: CancellationToken,
     count_tx: Sender<Result<(), EngineErr>>,
-    target_url: String,
+    q: ProcessMetaQuery,
 
     State(stt): State<EngineState>,
 ) -> Result<(), EngineErr>
 where
     RR: RedisRequest + serde::ser::Serialize,
 {
+    let target_url = ScrapeMetaSrc::from_str_to_src(&q.kind, &q.value)?.to_url();
     let idx = finding_idx::<RR>(State(stt.clone()), &target_url).await?;
-
     let finding_urls_receiver =
         finding_urls::<RR>(set, token_for_urls, &target_url, idx, State(stt.clone())).await?;
 

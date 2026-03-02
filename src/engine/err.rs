@@ -1,5 +1,6 @@
 use crate::{
     db_executor::DBExecutorErr,
+    engine::process_meta::ScrapeConvertErr,
     redis_window::{self, RedisHandleErr},
 };
 
@@ -25,4 +26,7 @@ pub enum EngineErr {
 
     #[error("EngineErr DBExecutorErr {0}")]
     DBExecutorErr(#[from] DBExecutorErr),
+
+    #[error("EngineErr ScrapeConvertErr {0}")]
+    ScrapeConvertErr(#[from] ScrapeConvertErr),
 }

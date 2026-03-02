@@ -1,4 +1,4 @@
-use std::{fmt::Debug, pin::Pin, sync::Arc, time::Duration};
+use std::{fmt::Debug, sync::Arc, time::Duration};
 
 use bb8::{Pool, PooledConnection};
 use bb8_redis::RedisConnectionManager;

@@ -12,7 +12,7 @@ pub struct Tag {
 }
 
 #[derive(serde::Serialize, Default)]
-pub struct Meta {
+pub struct Detail {
     pub id: String,
     pub title: String,
     pub url: String,
@@ -27,4 +27,21 @@ pub struct Meta {
     pub series: Vec<Tag>,
 
     pub time_table: Vec<TimeTable>,
+}
+
+#[derive(serde::Serialize)]
+pub struct Meta {
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    pub img_src: Option<String>,
+    pub time: i64,
+    pub file_path: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct Roughs {
+    pub index: i32,
+    pub size: i32,
+    pub result: Vec<Meta>,
 }

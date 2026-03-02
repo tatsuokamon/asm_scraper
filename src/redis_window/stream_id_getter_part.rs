@@ -5,7 +5,7 @@ use tokio::sync::mpsc::Sender;
 use crate::redis_window::{
     acquire::{MultiplexedAcquireConfig, acquire_conn},
     err::RedisHandleErr,
-    stream::StreamState
+    stream::StreamState,
 };
 
 pub async fn create_stream_id_getter_part(
