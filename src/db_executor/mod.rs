@@ -11,13 +11,17 @@ use crate::{
     entity::*,
     model::TagSrc,
 };
-use sea_orm::{ConnectionTrait, DbErr, EntityTrait, IntoActiveModel, Set, QueryFilter, ColumnTrait, ActiveModelTrait};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, IntoActiveModel,
+    QueryFilter, Set,
+};
 
 pub use create_meta::create_meta;
 pub use db_response::{Detail, Roughs};
 pub use err::DBExecutorErr;
 pub use find_meta_with_id::find_meta_with_id;
 pub use find_roughs::{FindRoughErr, TagFinderStruct, find_roughs};
+pub use update_tag::update_tag;
 
 impl From<meta::Model> for db_response::Meta {
     fn from(value: meta::Model) -> Self {
@@ -45,10 +49,13 @@ macro_rules! impl_into_db_response_tag {
     };
 }
 
-pub trait TagEntityExt: EntityTrait + Send {
+pub trait TagEntityExt: EntityTrait + Send + Sized {
     fn from_tag(tag: &TagSrc) -> Self::ActiveModel;
 
-    async fn find_existing(name: &str, db: &impl ConnectionTrait) -> Result<Option<Self::Model>, DbErr>;
+    async fn find_existing(
+        name: &str,
+        db: &impl ConnectionTrait,
+    ) -> Result<Option<Self::Model>, DbErr>;
     async fn is_already_exists(name: &str, db: &impl ConnectionTrait) -> Result<bool, DbErr>;
     async fn insert_from_tag(tag: &TagSrc, db: &impl ConnectionTrait) -> Result<Self::Model, DbErr>
     where
@@ -72,7 +79,10 @@ macro_rules! ImplTagEntityExt {
                 }
             }
 
-            async fn find_existing(name: &str, db: &impl ConnectionTrait) -> Result<Option<Self::Model>, DbErr> {
+            async fn find_existing(
+                name: &str,
+                db: &impl ConnectionTrait,
+            ) -> Result<Option<Self::Model>, DbErr> {
                 Self::find()
                     .filter($tag_relate_lib::Column::Name.eq(name))
                     .one(db)
@@ -94,12 +104,14 @@ ImplTagEntityExt!(genre);
 ImplTagEntityExt!(illust);
 ImplTagEntityExt!(series);
 ImplTagEntityExt!(circle);
+ImplTagEntityExt!(scenario);
 
 impl_into_db_response_tag!(cv);
 impl_into_db_response_tag!(genre);
 impl_into_db_response_tag!(circle);
 impl_into_db_response_tag!(illust);
 impl_into_db_response_tag!(series);
+impl_into_db_response_tag!(scenario);
 
 impl From<time_table::Model> for TimeTable {
     fn from(model: time_table::Model) -> Self {

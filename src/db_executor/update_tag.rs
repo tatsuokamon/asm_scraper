@@ -1,4 +1,4 @@
-use crate::{db_executor::TagEntityExt ,model::TagSrc};
+use crate::{db_executor::TagEntityExt, model::TagSrc};
 use sea_orm::{
     ActiveModelBehavior, ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection,
     DbErr, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect,
@@ -10,7 +10,10 @@ pub enum UpdateTagErr {
     DBErr(#[from] sea_orm::DbErr),
 }
 
-async fn update_tag<TagRelatedEntity>(tags: &[TagSrc], db: &DatabaseConnection) -> Result<(), DbErr>
+pub async fn update_tag<TagRelatedEntity>(
+    tags: &[TagSrc],
+    db: &DatabaseConnection,
+) -> Result<(), DbErr>
 where
     TagRelatedEntity: TagEntityExt,
     TagRelatedEntity::Model: IntoActiveModel<TagRelatedEntity::ActiveModel>,

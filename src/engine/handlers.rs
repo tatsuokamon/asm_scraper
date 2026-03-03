@@ -102,19 +102,21 @@ pub enum UpdateSrc {
 }
 impl ToString for UpdateSrc {
     fn to_string(&self) -> String {
+        let url_template = "";
+
         match self {
-            Self::CV => "".to_string(),
-            Self::Circle => "".to_string(),
-            Self::Scenario => "".to_string(),
-            Self::Illust => "".to_string(),
-            Self::Series => "".to_string(),
-            Self::Genre => "".to_string(),
+            Self::CV => format!("{}/{}", url_template, ""),
+            Self::Circle => format!("{}/{}", url_template, ""),
+            Self::Scenario => format!("{}/{}", url_template, ""),
+            Self::Illust => format!("{}/{}", url_template, ""),
+            Self::Series => format!("{}/{}", url_template, ""),
+            Self::Genre => format!("{}/{}", url_template, ""),
         }
     }
 }
 
 pub async fn update_tag<RR>(
-    update_src: UpdateSrc,
+    update_src: &UpdateSrc,
     State(stt): State<EngineState>,
 ) -> Result<Vec<TagSrc>, EngineErr>
 where

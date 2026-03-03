@@ -55,6 +55,7 @@ pub fn ready_router(
     Router::new()
         .route("/create_meta", get(scraping_meta_process::<BasicRedisReq>))
         .route("/update_tag", get(update_handler::<BasicRedisReq>))
+
         .route("/roughs", get(find_roughs_handler))
         .route("/detail", get(find_detail_handler))
         .with_state(state)
