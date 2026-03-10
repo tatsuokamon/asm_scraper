@@ -6,9 +6,16 @@ use sea_orm::{DatabaseConnection, DbErr};
 use std::str::FromStr;
 
 use crate::{
-    db_executor::{self, TagEntityExt}, engine::{
-        AxumResponse, FindResultResponse, err::EngineErr, handlers::{UpdateSrc, update_tag}, state::EngineState
-    }, entity::{circle, cv, genre, illust, scenario, series}, model::TagSrc, redis_communication::RedisRequest
+    db_executor::{self, TagEntityExt},
+    engine::{
+        AxumResponse, FindResultResponse,
+        err::EngineErr,
+        handlers::{UpdateSrc, update_tag},
+        state::EngineState,
+    },
+    entity::{circle, cv, genre, illust, scenario, series},
+    model::TagSrc,
+    redis_communication::RedisRequest,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -60,45 +67,36 @@ where
     RR: RedisRequest + serde::ser::Serialize,
 {
     match update_handler_inner::<RR>(&q.target, stt).await {
-        Ok(content) => {
-            (
-                axum::http::StatusCode::OK,
-                Json(UpdateResponse {
-                    payload: Some(content),
-                    error: None
-                })
-            )
-        },
+        Ok(content) => (
+            axum::http::StatusCode::OK,
+            Json(UpdateResponse {
+                payload: Some(content),
+                error: None,
+            }),
+        ),
         Err(e) => {
             tracing::error!("{e}");
             match e {
-                UpdateConvertErr => {
-                    (
-                        axum::http::StatusCode::BAD_REQUEST,
-                        Json(UpdateResponse {
-                            payload: None,
-                            error: Some("".to_string())
-                        })
-                    )
-                },
-                _ => {
-                    (
-                        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(UpdateResponse {
-                            payload: None,
-                            error: Some("".to_string())
-                        })
-                    )
-                }
+                UpdateConvertErr => (
+                    axum::http::StatusCode::BAD_REQUEST,
+                    Json(UpdateResponse {
+                        payload: None,
+                        error: Some("".to_string()),
+                    }),
+                ),
+                _ => (
+                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(UpdateResponse {
+                        payload: None,
+                        error: Some("".to_string()),
+                    }),
+                ),
             }
         }
     }
 }
 
-async fn update_handler_inner<RR>(
-    q: &str,
-    stt: EngineState,
-) -> Result<Vec<TagSrc>, UpdateTagErr>
+async fn update_handler_inner<RR>(q: &str, stt: EngineState) -> Result<Vec<TagSrc>, UpdateTagErr>
 where
     RR: RedisRequest + serde::Serialize,
 {
@@ -107,22 +105,22 @@ where
     match src {
         UpdateSrc::CV => {
             db_executor::update_tag::<cv::Entity>(&content, &stt.db).await?;
-        },
-        UpdateSrc::Series=> {
+        }
+        UpdateSrc::Series => {
             db_executor::update_tag::<series::Entity>(&content, &stt.db).await?;
-        },
-        UpdateSrc::Genre=> {
+        }
+        UpdateSrc::Genre => {
             db_executor::update_tag::<genre::Entity>(&content, &stt.db).await?;
-        },
-        UpdateSrc::Circle=> {
+        }
+        UpdateSrc::Circle => {
             db_executor::update_tag::<circle::Entity>(&content, &stt.db).await?;
-        },
-        UpdateSrc::Illust=> {
+        }
+        UpdateSrc::Illust => {
             db_executor::update_tag::<illust::Entity>(&content, &stt.db).await?;
-        },
-        UpdateSrc::Scenario=> {
+        }
+        UpdateSrc::Scenario => {
             db_executor::update_tag::<scenario::Entity>(&content, &stt.db).await?;
-        },
+        }
     }
 
     Ok(content)

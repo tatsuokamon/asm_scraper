@@ -80,6 +80,7 @@ async fn main() {
     // ready redis
     get_env!(redis_url, "REDIS_URL");
     let red_client = redis::Client::open(redis_url.clone()).expect("failed to open redis client");
+    tracing::info!("REDIS Client got!!");
 
     get_env_with_parsing!(backoff_init_count, "BACKOFF_INIT", u64);
     get_env_with_parsing!(redis_retry, "REDIS_RETRY", i32);
@@ -153,6 +154,7 @@ async fn main() {
     let db = sea_orm::Database::connect(db_url)
         .await
         .expect("failed to connect database");
+    tracing::info!("Database Connection got!!");
 
     get_env_with_parsing!(blocking_time, "BLOCKING_TIME", f64);
     get_env_with_parsing!(channel_buf, "CHANNEL_BUFFER", usize);

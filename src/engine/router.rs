@@ -16,6 +16,7 @@ use axum::{Router, routing::get};
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use tokio::sync::mpsc::Sender;
+use tower_http::cors::{CorsLayer, Any};
 
 pub fn ready_router(
     pool: Arc<Pool<RedisConnectionManager>>,
@@ -52,11 +53,20 @@ pub fn ready_router(
         engine_config: engine_conf,
     });
 
+    tracing::info!("/create_meta: ?kind={{}}&value={{}}");
+    tracing::info!("/update_tag: ?target={{}}");
+    tracing::info!(
+        "/roughs: ?index={{}}&size={{}}&cvs={{}}&illusts={{}}&series={{}}&circles={{}}&genres={{}}"
+    );
+    tracing::info!("/detail: ?target={{}}");
+
+    let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any);
+
     Router::new()
         .route("/create_meta", get(scraping_meta_process::<BasicRedisReq>))
         .route("/update_tag", get(update_handler::<BasicRedisReq>))
-
         .route("/roughs", get(find_roughs_handler))
         .route("/detail", get(find_detail_handler))
         .with_state(state)
+        .layer(cors)
 }

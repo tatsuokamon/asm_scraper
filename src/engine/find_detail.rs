@@ -1,6 +1,8 @@
 use axum::{
     Json,
     extract::{Query, State},
+    http::{HeaderMap, HeaderValue},
+    response::IntoResponse,
 };
 
 use crate::{
@@ -18,7 +20,7 @@ pub struct FindDetailQuery {
 pub async fn find_detail_handler(
     State(stt): State<EngineState>,
     Query(q): Query<FindDetailQuery>,
-) -> AxumResponse<FindDetailResponse> {
+) -> impl IntoResponse {
     match find_meta_with_id(q.id, &stt.db).await {
         Ok(Some(result)) => (
             axum::http::StatusCode::OK,

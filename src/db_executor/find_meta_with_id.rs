@@ -22,7 +22,7 @@ pub async fn find_meta_with_id(
             macro_rules! find_sub {
                 ($sub_table:ident, $inter_relation:expr, $column:expr, $id:expr) => {
                     $sub_table::Entity::find()
-                        .join(sea_orm::JoinType::InnerJoin, $inter_relation.def())
+                        .join(sea_orm::JoinType::InnerJoin, $inter_relation.def().rev())
                         .filter($column.eq($id))
                         .all(db)
                         .await?
@@ -31,7 +31,6 @@ pub async fn find_meta_with_id(
                         .collect()
                 };
             }
-
             Ok(Some(Detail {
                 cv: find_sub!(
                     cv,
