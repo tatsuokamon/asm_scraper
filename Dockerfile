@@ -1,5 +1,5 @@
 # backend build
-	FROM rust:bookworm AS backend-builder
+	FROM rust:1.93-bookworm AS backend-builder
 	WORKDIR /app
 
 	COPY ./Cargo.toml ./
@@ -8,7 +8,7 @@
 	RUN cargo build --release
 
 # migration build
-	FROM rust:bookworm AS migration-builder
+	FROM rust:1.93-bookworm AS migration-builder
 	WORKDIR /app
 
 	COPY ./migration/Cargo.toml ./
